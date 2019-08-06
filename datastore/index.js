@@ -14,49 +14,75 @@ exports.create = (text, callback) => {
       if (err) {
         throw ('input cannot be saved');
       } else {
-        items[id] = text;
+        // items[id] = text;
         callback(null, { id, text });
       }
     });
   });
-
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
-  });
-  callback(null, data);
+  fs.readdir(exports.dataDir, (err, files) => {
+    if (err) {
+      throw err;
+    } else {
+      var todos = _.map(files, (text, id) => {
+        var slicedId = text.slice(0,5);
+        return { id: slicedId, text: slicedId };
+      });
+      callback(null, todos);
+    }
+  })
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  // var text = items[id];
+  var filePath = path.join(exports.dataDir, id + '.txt');
+  fs.readFile(filePath, 'utf8', (err, text) => {
+    if (!text) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      callback(null, { id, text });
+    }
+  })
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
-  if (!item) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    items[id] = text;
-    callback(null, { id, text });
-  }
+  // var item = items[id];
+  var filePath = path.join(exports.dataDir, id + '.txt');
+  fs.readFile(filePath, 'utf8', (err, oldText) => {
+    if (!oldText) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      fs.writeFile(filePath, text, (err) => {
+        if (err) {
+          throw err;
+        } else {
+          callback(null, { id, text });
+        }
+      });
+    }
+  })
 };
 
 exports.delete = (id, callback) => {
-  var item = items[id];
-  delete items[id];
-  if (!item) {
-    // report an error if item not found
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback();
-  }
+  // var item = items[id];
+  // delete items[id];
+  var filePath = path.join(exports.dataDir, id + '.txt');
+  fs.readFile(filePath, 'utf8', (err, text) => {
+    if (!text) {
+      // report an error if item not found
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          throw err;
+        } else {
+          callback();
+        }
+      });
+    }
+  })
 };
 
 // Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
